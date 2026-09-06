@@ -14,7 +14,7 @@ def add(a,r):
     return a
 
 def read_json(p,default):
-    try:return json.loads(Path(p).read_text())
+    try:return json.loads(Path(p).read_text(encoding='utf-8'))
     except (OSError,ValueError):return default
 
 class Ledger:

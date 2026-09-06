@@ -9,8 +9,8 @@ def m(s=R,p=None):return e('session_meta',dict(id=s,timestamp=T,source='exec' if
 def count(v):return e('event_msg',dict(type='token_count',info=dict(total_token_usage=v,last_token_usage=v)))
 def record(v,rid='r1',sid=R):return e('token_usage_record',dict(thread_id=sid,response_id=rid,usage=v))
 class Accounting(unittest.TestCase):
- def setUp(self):self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name)
- def tearDown(self):self.temp.cleanup()
+ def setUp(self):self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
+ def tearDown(self):pass # LIFO cleanups close SQLite before removing temp files on Windows.
  def parse(self,rows,provider='codex',name=None):
   p=self.root/(name or R+'.jsonl');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(''.join(json.dumps(r)+'\n' for r in rows));return parse_file(p,provider)
  def ledger(self,*bundles):

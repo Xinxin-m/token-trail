@@ -6,7 +6,7 @@ from .analysis import Ledger
 def defaults(args):
     cfg={}
     if args.config:
-        cfg=json.loads(Path(args.config).expanduser().read_text())
+        cfg=json.loads(Path(args.config).expanduser().read_text(encoding='utf-8'))
     base=Path(os.environ.get('TOKEN_TRAIL_DATA',str(Path.home()/'.local/share/token-trail'))).expanduser()
     return dict(db=str(base/'ledger.sqlite'),claude_root='~/.claude/projects',codex_root='~/.codex/sessions',library='',port=8765,interval=5) | cfg
 

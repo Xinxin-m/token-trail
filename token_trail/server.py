@@ -90,7 +90,7 @@ def handler(state):
                         return self.send(markdown(state.snapshot(filters(q)),kind),ctype='text/markdown; charset=utf-8',filename='SKILL.md' if kind=='skill' else 'token-efficiency-feedback.md')
                     if p.path in ('/api/report','/api/diagnosis'):
                         personal=Path(state.config['db']).parent/'diagnosis.md'
-                        if p.path=='/api/diagnosis' and personal.is_file():body=personal.read_text()
+                        if p.path=='/api/diagnosis' and personal.is_file():body=personal.read_text(encoding='utf-8')
                         else:
                             from .report import markdown
                             body=markdown(l,state.snapshot(filters(q)))
