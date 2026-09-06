@@ -60,9 +60,6 @@ class Ledger:
         for s in self.sessions.values():
             if s['origin']!='human' and not s['parent'] and templates[s['title'][:110]]>=4:
                 s.update(origin='likely automation',lineage='Repeated prompt template (inferred)')
-        for child,parent,reason,_ in db.execute('SELECT * FROM overrides'):
-            if child in self.sessions:
-                self.sessions[child].update(parent=parent or '',origin='agent' if parent else 'human',lineage=reason)
         # The optional wrapper/hook writes only IDs and PID ancestry, never prompts.
         events=[json.loads(r[0]) for r in db.execute('SELECT payload FROM trace_events')]
         runs={e.get('run_id'):e for e in events if e.get('kind')=='launch'}
@@ -71,6 +68,10 @@ class Ledger:
             sid=e.get('session');run=runs.get(e.get('run_id'));parent=e.get('parent') or (run or {}).get('parent')
             if sid in self.sessions and parent in self.sessions and sid!=parent:
                 self.sessions[sid].update(parent=parent,origin='agent',lineage='Instrumented launch trace')
+        # Explicit user corrections outrank both native evidence and launch traces.
+        for child,parent,reason,_ in db.execute('SELECT * FROM overrides'):
+            if child in self.sessions:
+                self.sessions[child].update(parent=parent or '',origin='agent' if parent else 'human',lineage=reason)
         # Read-only integration with the user's optional chat library.
         if library:
             p=Path(library).expanduser();index=read_json(p/'index.json',{});enrich=read_json(p/'enrich.json',{});projects=read_json(p/'projects.json',{})

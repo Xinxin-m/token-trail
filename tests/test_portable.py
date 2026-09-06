@@ -22,6 +22,13 @@ class PortableSources(unittest.TestCase):
         self.assertEqual(s['coverage']['linked_children'],1);self.assertEqual(len(s['roots']),1)
         self.assertEqual(sum(r.get('custom',0) for r in s['visuals']['histogram']),2)
         self.assertEqual(s['all_providers'],['custom']);self.assertEqual(s['totals']['input'],2040)
+    def test_manual_root_correction_outranks_launch_trace(self):
+        self.write(self.root/'events.jsonl',[self.usage(),self.usage(session_id='child',request_id='response2')])
+        scan(self.db,config={'sources':[{'adapter':'usage-jsonl','path':str(self.root)}]})
+        event=dict(kind='session_start',session='custom:child',parent='custom:root')
+        self.db.execute('insert into trace_events values(?,?)',('trace',json.dumps(event)))
+        self.db.execute('insert into overrides values(?,?,?,?)',('custom:child','','User-confirmed human root',1700000000));self.db.commit()
+        s=Ledger(self.db).sessions['custom:child'];self.assertEqual(s['root'],'custom:child');self.assertEqual(s['origin'],'human')
     def test_invalid_counter_not_silently_zero(self):
         rows=[self.usage(usage={'fresh':-1,'cache_read':0,'cache_write':0,'output':1}),self.usage(usage={'fresh':2,'output':1})]
         b=parse_file(self.write(self.root/'bad.jsonl',rows),'usage-jsonl')['bundles'][0]
