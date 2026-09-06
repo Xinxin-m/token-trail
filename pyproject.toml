@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "token-trail"
+version = "0.1.0"
+description = "Local token observability for Claude Code and Codex, grouped by human intent."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Token Trail contributors"}]
+keywords = ["claude", "codex", "tokens", "observability", "agents"]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+dependencies = []
+
+[project.scripts]
+token-trail = "token_trail.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["token_trail*"]
+
+[tool.setuptools.package-data]
+token_trail = ["web/*.html", "web/*.css", "web/*.js"]

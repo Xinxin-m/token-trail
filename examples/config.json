@@ -1,0 +1,8 @@
+{
+  "db": "./data/ledger.sqlite",
+  "claude_root": "~/.claude/projects",
+  "codex_root": "~/.codex/sessions",
+  "library": "",
+  "port": 8765,
+  "interval": 5
+}

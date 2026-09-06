@@ -1,0 +1,13 @@
+data/
+output/
+.playwright-cli/
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.jsonl
+.venv/
+build/
+dist/
+*.egg-info/
+.DS_Store
+.env*
