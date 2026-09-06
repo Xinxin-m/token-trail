@@ -14,7 +14,7 @@ class State:
         db=connect(self.config['db']);previous_library=None
         while not self.stop.is_set():
             try:
-                report=scan(db,self.config['claude_root'],self.config['codex_root'])
+                report=scan(db,config=self.config)
                 library=Path(self.config['library']) if self.config.get('library') else None
                 signature=tuple((p.name,p.stat().st_mtime_ns) for p in library.glob('*.json')) if library and library.exists() else ()
                 if report['changed'] or self.ledger is None or self.refresh.is_set() or signature!=previous_library:
@@ -35,6 +35,8 @@ class State:
             if key in self.cache:return self.cache[key]
         if ledger is None:return None
         result=ledger.summary(**filters)
+        from .coaching import playbook
+        result['coaching']=playbook(result)
         with self.lock:
             if len(self.cache)>30:self.cache={}
             self.cache[key]=result
@@ -48,7 +50,8 @@ def filters(query):
     elif hours in ('all',''):hours=None
     else:hours=max(0,min(float(hours),24*365*20))
     provider=query.get('provider',['all'])[0]
-    if provider not in ('all','claude','codex'):raise ValueError('Unknown provider')
+    from .adapters import NAME
+    if not NAME.fullmatch(provider):raise ValueError('Invalid provider')
     return dict(hours=hours,provider=provider,topic=query.get('topic',['all'])[0])
 
 def handler(state):
@@ -80,6 +83,11 @@ def handler(state):
                         result=l.detail(q.get('id',[''])[0],**filters(q))
                         return self.send(result if result else {'error':'Unknown session'},200 if result else 404)
                     if p.path=='/api/lineage':return self.send(l.lineage())
+                    if p.path=='/api/playbook':
+                        from .coaching import markdown
+                        kind=q.get('format',['memory'])[0]
+                        if kind not in ('memory','skill'):raise ValueError('format must be memory or skill')
+                        return self.send(markdown(state.snapshot(filters(q)),kind),ctype='text/markdown; charset=utf-8',filename='SKILL.md' if kind=='skill' else 'token-efficiency-feedback.md')
                     if p.path in ('/api/report','/api/diagnosis'):
                         personal=Path(state.config['db']).parent/'diagnosis.md'
                         if p.path=='/api/diagnosis' and personal.is_file():body=personal.read_text()

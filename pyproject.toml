@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "token-trail"
-version = "0.1.0"
-description = "Local token observability for Claude Code and Codex, grouped by human intent."
+version = "0.2.0"
+description = "Local token observability across AI clients, grouped by human intent."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -21,4 +21,4 @@ token-trail = "token_trail.cli:main"
 include = ["token_trail*"]
 
 [tool.setuptools.package-data]
-token_trail = ["web/*.html", "web/*.css", "web/*.js"]
+token_trail = ["web/*.html", "web/*.css", "web/*.js", "skill/*.md", "skill/references/*.md"]

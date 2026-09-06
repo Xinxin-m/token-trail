@@ -5,10 +5,11 @@ from pathlib import Path
 from datetime import datetime, timezone
 from collections import Counter
 
-VERSION = 4
+VERSION = 5
 UUID = re.compile(r'\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b', re.I)
 
 def stamp(s):
+    if isinstance(s,(int,float)) and not isinstance(s,bool):return float(s)
     try: return datetime.fromisoformat(str(s).replace('Z','+00:00')).timestamp()
     except (ValueError, TypeError): return 0.0
 
@@ -69,6 +70,9 @@ def clean_title(s):
     return s[:150] or 'Untitled conversation'
 
 def parse_file(path, provider):
+    if provider in ('kimi','usage-jsonl'):
+        from .adapters import kimi,generic
+        return kimi(path) if provider=='kimi' else generic(path)
     path=Path(path); sid=path.stem; sub=provider=='claude' and 'subagents' in path.parts
     if sub:sid=path.parent.parent.name+'/'+path.stem
     elif provider=='codex':
@@ -242,12 +246,18 @@ def connect(path):
     except OSError:pass
     return db
 
-def scan(db,claude_root,codex_root,progress=None):
+def scan(db,claude_root=None,codex_root=None,progress=None,config=None):
     import zlib
     known={r[0]:r[1:] for r in db.execute('SELECT path,mtime,size,version FROM files')};changed=0;errors=[];found=[]
-    for provider,root in [('claude',Path(claude_root).expanduser()),('codex',Path(codex_root).expanduser())]:
-        if not root.exists():errors.append(f'{provider} log root is absent: {root}');continue
-        for p in sorted(root.rglob('*.jsonl')):
+    from .adapters import sources
+    config=config if config is not None else dict(sources=[dict(adapter=k,path=str(v)) for k,v in [('claude',claude_root),('codex',codex_root)] if v])
+    available=[]
+    for source in sources(config):
+        provider=source['adapter'];root=Path(source['path']).expanduser()
+        if not root.exists():continue # A single-provider installation is normal.
+        available.append(provider)
+        paths=[root] if root.is_file() else sorted(root.rglob('wire.jsonl' if provider=='kimi' else '*.jsonl'))
+        for p in paths:
             try:
                 st=p.stat();key=str(p);found.append(key)
                 if known.get(key)==(st.st_mtime_ns,st.st_size,VERSION):continue
@@ -261,8 +271,11 @@ def scan(db,claude_root,codex_root,progress=None):
                     if progress:progress(changed)
             except (OSError,ValueError,TypeError,KeyError) as e:errors.append(f'{p.name}: {type(e).__name__}: {e}')
     db.commit()
-    return dict(changed=changed,files=len(found),errors=errors,scanned_at=time.time())
+    return dict(changed=changed,files=len(found),errors=errors,available_adapters=sorted(set(available)),scanned_at=time.time())
 
 def load(db):
     import zlib
-    return [json.loads(zlib.decompress(r[0])) for r in db.execute('SELECT payload FROM files')]
+    result=[]
+    for row in db.execute('SELECT payload FROM files'):
+        b=json.loads(zlib.decompress(row[0]));result.extend(b['bundles'] if 'bundles' in b else [b])
+    return result

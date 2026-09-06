@@ -31,7 +31,9 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--config',required=True);p.add_argument('--service',action='store_true');p.add_argument('--hooks',action='store_true');a=p.parse_args();config=Path(a.config).resolve()
     if not config.is_file():raise SystemExit('Configuration file is missing')
     if a.hooks:
-        install_hook(Path.home()/'.claude/settings.json','claude',config);install_hook(Path.home()/'.codex/hooks.json','codex',config)
+        for provider,filename in [('claude','settings.json'),('codex','hooks.json')]:
+            root=Path.home()/('.'+provider)
+            if root.is_dir():install_hook(root/filename,provider,config)
     if a.service:
         log=Path(json.loads(config.read_text())['db']).parent/'service.log';log.parent.mkdir(parents=True,exist_ok=True)
         if sys.platform=='darwin':

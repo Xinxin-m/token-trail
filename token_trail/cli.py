@@ -11,18 +11,30 @@ def defaults(args):
     return dict(db=str(base/'ledger.sqlite'),claude_root='~/.claude/projects',codex_root='~/.codex/sessions',library='',port=8765,interval=5) | cfg
 
 def main():
-    p=argparse.ArgumentParser(description='Token Trail: local, zero-LLM token observability for Claude Code and Codex.')
+    p=argparse.ArgumentParser(description='Token Trail: local, zero-LLM token observability across AI clients.')
     p.add_argument('--config',help='Local JSON configuration file')
     sub=p.add_subparsers(dest='command',required=True)
     s=sub.add_parser('serve');s.add_argument('--port',type=int)
     sub.add_parser('scan')
     r=sub.add_parser('report');r.add_argument('--hours',type=float);r.add_argument('--json',action='store_true')
     sub.add_parser('doctor')
+    audit=sub.add_parser('audit-instructions');audit.add_argument('--path',action='append',required=True)
+    init=sub.add_parser('init');init.add_argument('--output',required=True);init.add_argument('--source',action='append',help='adapter=path; repeat for several sources')
+    ins=sub.add_parser('install-skill');dest=ins.add_mutually_exclusive_group(required=True);dest.add_argument('--target',choices=['claude','codex']);dest.add_argument('--path',help='New skill directory for another compatible agent')
+    coach=sub.add_parser('coach');coach.add_argument('--hours',type=float);coach.add_argument('--format',choices=['memory','skill'],default='memory')
     a=sub.add_parser('advise');a.add_argument('--session',required=True)
     hook=sub.add_parser('hook');hook.add_argument('--provider',choices=['claude','codex'],required=True)
     run=sub.add_parser('run',help='Trace a cross-provider launch without changing its model');run.add_argument('--parent',required=True);run.add_argument('argv',nargs=argparse.REMAINDER)
     sub.add_parser('demo')
     args=p.parse_args();config=defaults(args)
+    if args.command=='audit-instructions':
+        from .instructions import audit
+        print(json.dumps(audit(args.path),indent=2));return
+    if args.command in ('init','install-skill'):
+        from .setup import initialize,install_skill
+        try:result=initialize(config,args.output,args.source) if args.command=='init' else install_skill(args.target,args.path)
+        except (OSError,ValueError) as e:p.error(str(e))
+        print(json.dumps(result,indent=2));return
     if args.command=='serve':
         from .server import serve
         if args.port:config['port']=args.port
@@ -37,14 +49,17 @@ def main():
         from .demo import seed
         seed(config);return
     db=connect(config['db'])
-    if args.command=='scan':print(json.dumps(scan(db,config['claude_root'],config['codex_root']),indent=2));return
+    if args.command=='scan':print(json.dumps(scan(db,config=config),indent=2));return
     if args.command=='doctor':
+        from .adapters import sources
         result=dict(python=sys.version.split()[0],database=config['db'],cached_files=db.execute('SELECT count(*) FROM files').fetchone()[0],
-                    sources={k:str(Path(config[k]).expanduser()) for k in ('claude_root','codex_root')},
-                    source_exists={k:Path(config[k]).expanduser().exists() for k in ('claude_root','codex_root')},
-                    library_available=bool(config['library'] and Path(config['library']).expanduser().exists()),network='loopback only',model_calls=0)
+                    sources=[dict(s,exists=Path(s['path']).expanduser().exists()) for s in sources(config)],
+                    library_available=bool(config.get('library') and Path(config['library']).expanduser().exists()),network='loopback only',model_calls=0)
         print(json.dumps(result,indent=2));return
     ledger=Ledger(db,config.get('library'));summary=ledger.summary(hours=args.hours)
+    if args.command=='coach':
+        from .coaching import markdown
+        print(markdown(summary,args.format));return
     if args.json:print(json.dumps(summary,indent=2));return
     from .report import markdown
     print(markdown(ledger,summary))

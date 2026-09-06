@@ -11,3 +11,6 @@ dist/
 *.egg-info/
 .DS_Store
 .env*
+
+my-private-feedback.md
+*private-config*.json

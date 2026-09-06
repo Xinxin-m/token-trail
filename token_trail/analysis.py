@@ -163,7 +163,7 @@ class Ledger:
         labels=['<16k','16–32k','32–64k','64–128k','128–256k','256–512k','512k+']
         histogram=[dict(label=label,claude=0,codex=0,count=0,total=0) for label in labels]
         for r in requests:
-            idx=min(6,bisect.bisect_right(limits,r['input'])-1);b=histogram[idx];b[r['provider']]+=1;b['count']+=1;b['total']+=r['total']
+            idx=min(6,bisect.bisect_right(limits,r['input'])-1);b=histogram[idx];b[r['provider']]=b.get(r['provider'],0)+1;b['count']+=1;b['total']+=r['total']
         ordered=sorted(r['input'] for r in requests)
         quantiles={k:(ordered[min(len(ordered)-1,int((len(ordered)-1)*p))] if ordered else 0) for k,p in [('median',.5),('p90',.9),('max',1)]}
         # Uniform deterministic sample plus largest-context outliers; the histogram
@@ -188,6 +188,7 @@ class Ledger:
                                   unresolved_roots=sum(r['origin'] not in ('human','likely human') for r in roots),linked_children=native_children,child_tokens=measured_children,
                                   unresolved_tokens=unresolved,deduplicated_records=self.duplicates,warning_sessions=warning_count,cycles=len(self.cycles)),
                     observed=dict(tool_calls=len(tools),tool_failures=failures,repeated_results=repeat_calls,repeated_result_tokens_estimate=repeated_tokens,images=sum(i['images'] for i in items),repeated_images=repeated_images,resource_rereads=sum(r['rereads'] for r in resources.values())),
+                    all_providers=sorted({s['provider'] for s in self.sessions.values()}),
                     all_topics=sorted({s['root_topic'] for s in self.sessions.values()}),
                     rate_limits=[dict(session=s['id'],provider=s['provider'],**s['rate_limits']) for s in self.sessions.values() if s.get('rate_limits') and now-s['rate_limits']['timestamp']<86400][-10:])
 

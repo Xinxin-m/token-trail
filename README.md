@@ -4,11 +4,16 @@
 
 Claude calls Codex. Codex starts three agents. One of them retries the same fetch ten times. Token Trail brings the usage back to the original task, so you can see the shape of the work—not just a daily total.
 
-A local dashboard for **Claude Code and Codex logs**. Zero runtime dependencies. Zero model calls. No API key. No transcript uploads.
+A local dashboard for **Claude Code, Codex, Python Kimi CLI and portable usage exports**. Zero runtime dependencies. Zero model calls. No API key. No transcript uploads.
 
-![Token Trail visual atlas with fictional demo data](docs/demo.png)
+![Token Trail Overview with fictional demo data](docs/overview.png)
 
 ## Run from source
+
+```sh
+git clone https://github.com/Xinxin-m/token-trail.git
+cd token-trail
+```
 
 Requires Python 3.10 or newer. From this repository:
 
@@ -16,7 +21,7 @@ Requires Python 3.10 or newer. From this repository:
 python3 -m token_trail serve
 ```
 
-Open **http://127.0.0.1:8765**. The first import reads your local transcripts; the collector then checks for changes every five seconds. Claude Code and Codex do not need to be running for historical analysis.
+Open **http://127.0.0.1:8765**. The first import reads your local transcripts; the collector then checks for changes every five seconds. Your clients do not need to be running for historical analysis.
 
 Or install this checkout into your preferred Python environment:
 
@@ -33,10 +38,46 @@ This is a source release; there is no implied public PyPI package or hosted serv
 - **2h / 5h / today / 7d / 30d / all-time views**, filtered by provider and existing chat-library topics.
 - **Cache-aware accounting**, output and reasoning splits, per-model totals, request activity and daily exports.
 - **Tools, skills, images, repeated payloads and explicit error signals.** Measured counters and text-size estimates are visibly different.
-- **An efficiency workbench.** Evidence-based opportunities and a context carry-forward simulator, without pretending every large number is waste.
+- **An actionable efficiency workbench.** Copy instructions into your harness, or download a personalized memory / SKILL.md with measured evidence and files to inspect. Cache explanations distinguish useful reuse from obsolete context.
+- **An integrated visual Overview.** Request histogram, token composition, fitted conversation treemap, cache scatterplot and activity rhythm. All charts work with the providers found on your device.
 - **Private-safe share export.** Aggregate numbers only; no names, paths, session IDs, prompts or topics.
 
 Browser-only Claude/ChatGPT conversations and remote-machine transcripts are not collected automatically. Point an adapter at local copies of supported logs to analyze additional machines separately.
+
+## Give it to your agent
+
+Install the reusable skill after cloning or installing this package:
+
+```sh
+python3 -m token_trail install-skill --target claude
+# Or:
+python3 -m token_trail install-skill --target codex
+```
+
+For another skill-compatible agent, use `install-skill --path /absolute/new/skill-directory`. The installer refuses an existing destination. It copies the small [skill entry point](token_trail/skill/SKILL.md), provider reference and a local runner that remembers the Python environment. Keep that environment and checkout available. The wheel includes both the dashboard template and skill assets.
+
+Ask: **“Use Token Trail to show my last week's usage and generate three concrete harness improvements.”** The skill runs existing code; it does not rebuild the dashboard or spend model tokens classifying raw transcripts.
+
+```sh
+python3 -m token_trail scan
+python3 -m token_trail coach --hours 168 > my-private-feedback.md
+python3 -m token_trail audit-instructions --path ~/.claude/skills --path ~/.codex/AGENTS.md
+```
+
+Generated feedback is a handoff for review, not an automatic edit to global instructions. Keep it outside Git. `audit-instructions` resolves aliases, reports entry-point sizes and sections, and makes no changes.
+
+## Use one provider, or bring another
+
+Default discovery checks supported log directories and ignores those absent. No API key or second provider is required. The **Provider** filter adapts to your indexed data.
+
+Native Kimi support covers Python CLI usage and nested child events; model names may be unknown and tool attribution is not yet implemented. The newer TypeScript Kimi Code format is not supported. Other clients can supply measured per-response counters through the documented `usage-jsonl` adapter. See the [coverage matrix and exporter contract](docs/ADAPTERS.md).
+
+Create a private configuration automatically from detected sources:
+
+```sh
+python3 -m token_trail init --output /absolute/private/config.json
+python3 -m token_trail --config /absolute/private/config.json serve
+```
 
 ## Configuration and existing chat library
 
@@ -56,7 +97,7 @@ The default database lives at `~/.local/share/token-trail/ledger.sqlite`. Set `T
 python3 scripts/install_local.py --config data/config.json --service --hooks
 ```
 
-This adds a macOS LaunchAgent or Linux user service and optional identifier-only SessionStart hooks for both clients, preserving existing hooks and saving backups. Follow the printed service-start command. Hooks take effect in new sessions. Collection itself does not require hooks.
+This adds a macOS LaunchAgent or Linux user service and optional identifier-only SessionStart hooks for installed Claude/Codex clients, preserving existing hooks and saving backups. Follow the printed service-start command. Hooks take effect in new sessions. Collection itself does not require hooks.
 
 For an AI-launched cross-provider run, use an explicit parent identifier:
 
@@ -106,4 +147,4 @@ node --check token_trail/web/app.js
 
 The runtime is Python standard library + static HTML/CSS/JavaScript. SQLite is a disposable derived ledger; source transcripts are never edited. The current collector reparses changed files rather than tails bytes, favoring correct handling of streaming updates and rewritten transcripts. Very large active logs may refresh more slowly than the five-second polling target.
 
-MIT licensed. This project is independent of Anthropic and OpenAI.
+MIT licensed. This project is independent of model providers.

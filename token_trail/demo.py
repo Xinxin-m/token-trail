@@ -26,5 +26,5 @@ def seed(config):
             db.execute('INSERT INTO files VALUES(?,?,?,?,?,?)',(native,0,0,2,now,zlib.compress(encoded(bundle).encode())))
     db.commit();db.close()
     (target/'claude').mkdir(exist_ok=True);(target/'codex').mkdir(exist_ok=True)
-    cfg=dict(db=str(dbpath.resolve()),claude_root=str((target/'claude').resolve()),codex_root=str((target/'codex').resolve()),port=8766,interval=5,library='',demo=True)
+    cfg=dict(sources=[],db=str(dbpath.resolve()),claude_root=str((target/'claude').resolve()),codex_root=str((target/'codex').resolve()),port=8766,interval=5,library='',demo=True)
     path=target/'config.json';path.write_text(json.dumps(cfg,indent=2));print('Synthetic demo created. Run:\npython3 -m token_trail --config '+str(path)+' serve')

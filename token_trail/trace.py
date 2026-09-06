@@ -1,5 +1,5 @@
 """Opt-in launch trace. Stores identifiers only; never captures stdin/stdout/prompts."""
-import json,os,subprocess,sys,time,uuid,shlex
+import json,os,subprocess,sys,time,uuid,shlex,re
 from .collector import connect,UUID
 
 def event(config,value):
@@ -29,7 +29,7 @@ def hook(config,provider):
 def run(config,parent,argv):
     if argv and argv[0]=='--':argv=argv[1:]
     if not argv:raise SystemExit('Provide a command after --')
-    if not parent.startswith(('claude:','codex:')):raise SystemExit('--parent must be claude:<session-id> or codex:<thread-id>')
+    if not re.fullmatch(r'[a-z][a-z0-9_-]{0,39}:.+',parent):raise SystemExit('--parent must be provider:session-id')
     run_id=str(uuid.uuid4());env=os.environ.copy();env['TOKEN_TRAIL_PARENT']=parent;env['TOKEN_TRAIL_RUN_ID']=run_id
     event(config,dict(kind='launch',run_id=run_id,parent=parent,executable=os.path.basename(argv[0]),ts=time.time()))
     # No shell, no output capture, no model override. Preserve normal terminal IO.

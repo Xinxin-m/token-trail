@@ -42,3 +42,12 @@ The current version exports safe JSON. A polished shareable PNG/SVG recap, insta
 - Share-export use with explicit consent; never use private-chat uploads as a growth loop.
 
 An open-source tool earns adoption through trust and a fast first insight. Virality cannot be promised. Start with a sharp wedge for Claude Code/Codex power users; “any AI user” becomes plausible only after adding honest adapters for their products, especially browser chats where request usage is often unavailable.
+
+
+## v0.2 public beta
+
+The first-run payoff is an integrated Overview plus an actionable handoff: show where context and child work accumulate, then copy a rule or download a personalized memory/skill. Keep installation local and deterministic; no API key and no classification bill. Support a single client as a normal case. Ship explicit adapter coverage instead of claiming to observe every AI product.
+
+Public adoption can start with a fictional demo, a screenshot and a two-command clone/run path. The reusable skill should execute this package, not regenerate a dashboard. Community contributions should begin with anonymized adapter fixtures and accounting invariants; never request full private transcripts in public issues. Publish product demos and aggregate exports only with explicit user choice.
+
+Success measures: time to first useful report, installation completion, percentage of sessions with known lineage, usefulness of the first proposed edit, and retained task quality. A large reported token saving is not evidence of product value unless the same work still passes its checks.
